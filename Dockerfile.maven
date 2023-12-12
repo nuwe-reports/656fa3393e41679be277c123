@@ -1,0 +1,27 @@
+FROM maven:4.0.0 as test
+
+WORKDIR /app
+
+COPY pom.xml .
+RUN mvn dependency:go-offline
+RUN mvn test
+
+FROM maven:4.0.0 as build
+
+WORKDIR /app
+
+COPY --from=test /app /app
+
+#clear the target directory and not execute tests during the build
+RUN mvn clean package
+
+FROM jdk:21
+
+WORKDIR /app
+
+COPY --from=build /app/target/accenture-techhub.jar /app/accenture-techhub.jar
+
+EXPOSE 8080
+
+CMD ["java","-jar","accenture-techhub.jar"]
+
